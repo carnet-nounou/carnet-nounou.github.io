@@ -732,7 +732,7 @@ img{max-width:100%}
   </section>
 </div>
 
-<nav class="tabs" aria-label="Sections">
+<nav class="tabs" id="tabsNav" aria-label="Sections" hidden>
   <div class="tabs-in">
     <button class="tab" data-v="accueil"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5V20H4z"/><path d="M10 20v-5h4v5"/></svg>Tableau de bord</button>
     <button class="tab" data-v="agenda"><svg viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M9 3.5v4M15 3.5v4"/></svg>Agenda</button>
@@ -1603,7 +1603,7 @@ img{max-width:100%}
   function start(store){
     if(started)return;started=true;
     db=store;mode="db";
-    $("boot").hidden=true;$("auth").hidden=true;$("appRoot").hidden=false;
+    $("boot").hidden=true;$("auth").hidden=true;$("appRoot").hidden=false;$("tabsNav").hidden=false;
     $("meName").textContent=ME.name;
     if(DEMO)$("demoBand").hidden=false;
     renderAll();showView(location.hash.slice(1));
