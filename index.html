@@ -151,6 +151,13 @@ tr.pick[aria-selected="true"] td:last-child{border-radius:0 10px 10px 0}
 td.m{text-transform:capitalize;font-weight:600}
 tfoot td{font-weight:700;border-top:2px solid var(--line)}
 .breakdown{display:flex;flex-wrap:wrap;gap:6px}
+.absbox{display:flex;flex-direction:column;gap:8px;background:color-mix(in srgb,var(--rose) 10%,var(--surface));border-radius:calc(18px * var(--rk,1));padding:12px 14px}
+.abs-total{font-family:var(--display);font-weight:800;font-size:24px;color:var(--rose-deep);font-variant-numeric:tabular-nums}
+.abs-list{display:flex;flex-direction:column;gap:6px}
+.abs-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px;font-variant-numeric:tabular-nums}
+.abs-row b{white-space:nowrap}
+.abs-row.muted{color:var(--muted)}
+.abs-row.muted b{font-weight:600}
 .tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:calc(999px * var(--rk,1));background:color-mix(in srgb,var(--c) 22%,transparent)}
 .daylist{display:flex;flex-direction:column;font-size:14px;font-variant-numeric:tabular-nums}
 .daylist div{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
@@ -387,6 +394,12 @@ h1 em{position:relative;display:inline-block}
 .pay-hero .lines .tot{background:linear-gradient(135deg,var(--rose),var(--rose-deep));color:var(--rose-ink);border-radius:calc(16px * var(--rk,1));padding:12px 14px;font-size:19px;margin-top:4px}
 .pay-hero .lines .tot .ic{color:var(--rose-ink)}
 .pay-hero .lines .tot span:last-child{font-family:var(--display);font-weight:800}
+.stat b{white-space:nowrap;font-size:clamp(20px,6.2vw,26px)}
+.paje{display:flex;flex-direction:column;gap:10px;border-top:1px dashed var(--line);padding-top:14px}
+.paje-kv{display:grid;grid-template-columns:1fr auto;gap:6px 14px;margin:0;font-size:14px;font-variant-numeric:tabular-nums}
+.paje-kv dt{color:var(--muted)}
+.paje-kv dd{margin:0;font-weight:700;text-align:right}
+.paje-cta{text-decoration:none;padding:14px 18px;font-size:16px}
 
 /* Barre d'onglets flottante */
 .tabs{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));
@@ -528,7 +541,7 @@ img{max-width:100%}
       <div class="tiles">
         <div class="tile t1"><span class="bub" data-ic="sun"></span><b id="dbWork">0</b><small>jours travaillés</small></div>
         <div class="tile t2"><span class="bub" data-ic="clock"></span><b id="dbHours">0 h</b><small>heures de garde</small></div>
-        <div class="tile t3"><span class="bub" data-ic="umbrella"></span><b id="dbOther">0</b><small>absences</small></div>
+        <div class="tile t3"><span class="bub" data-ic="umbrella"></span><b id="dbOther">0 h</b><small id="dbOtherSub">d'absence</small></div>
       </div>
       <div class="todo" id="dbTodo"></div>
     </div>
@@ -631,6 +644,11 @@ img{max-width:100%}
         <div class="stat"><b id="pMens">—</b><span data-ic="doc">heures mensualisées</span></div>
       </div>
       <div class="breakdown" id="pBreak"></div>
+      <div class="absbox">
+        <div class="row"><span class="lbl" data-ic="umbrella">Absences de <span class="amFirst">Marine</span></span><b class="abs-total" id="pAbsTot">0 h</b></div>
+        <div class="abs-list" id="pAbsList"></div>
+        <small class="hint">Calculées d'après les horaires prévus au contrat pour chaque jour.</small>
+      </div>
       <div class="lines">
         <div><span data-ic="euro">Salaire net mensualisé</span><span id="pSal">—</span></div>
         <div><span data-ic="basket">Indemnités d'entretien <small id="pEntDet"></small></span><span id="pEnt">—</span></div>
@@ -638,6 +656,17 @@ img{max-width:100%}
         <small>Montant indicatif, à vérifier sur Pajemploi. Retenues éventuelles (absences non rémunérées) à valider selon le motif et la réglementation.</small>
       </div>
       <span class="msg" id="payMsg"></span>
+      <div class="paje">
+        <span class="lbl" data-ic="doc">À reporter sur Pajemploi</span>
+        <dl class="paje-kv">
+          <dt>Jours d'activité</dt><dd id="pjJours">—</dd>
+          <dt>Heures normales</dt><dd id="pjHeures">—</dd>
+          <dt>Salaire net</dt><dd id="pjSal">—</dd>
+          <dt>Indemnités d'entretien</dt><dd id="pjEnt">—</dd>
+        </dl>
+        <a class="btn paje-cta" href="https://www.pajemploi.urssaf.fr/" target="_blank" rel="noopener">Déclarer la paie sur Pajemploi <span aria-hidden="true">↗</span></a>
+        <small class="hint">S'ouvre sur le site officiel de l'Urssaf. Vérifiez les montants avant de valider la déclaration.</small>
+      </div>
       <details>
         <summary class="lbl" style="cursor:pointer">Détail des jours travaillés</summary>
         <div class="daylist" id="pDays"></div>
@@ -647,7 +676,7 @@ img{max-width:100%}
       <span class="lbl" data-ic="cal">Année de contrat</span>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Mois</th><th>Jours</th><th>Heures</th><th>Entretien</th><th>Total</th></tr></thead>
+          <thead><tr><th>Mois</th><th>Jours</th><th>Heures</th><th>Absences</th><th>Entretien</th><th>Total</th></tr></thead>
           <tbody id="yearBody"></tbody>
           <tfoot><tr id="yearFoot"></tr></tfoot>
         </table>
@@ -814,13 +843,17 @@ img{max-width:100%}
   function plannedFor(w){const h=contrat&&contrat.horaires&&contrat.horaires[String(w)];return Array.isArray(h)&&h.length===2&&h[0]&&h[1]?h:null;}
   function mins(t){if(!t||!/^\d{1,2}:\d{2}$/.test(t))return null;const[a,b]=t.split(":").map(Number);return a*60+b;}
   function hoursOf(e){if(!e||e.s!=="work")return 0;const a=mins(e.start),b=mins(e.end);if(a==null||b==null)return 0;return((b-a+1440)%1440)/60;}
+  /* absences de la nounou : comptées en heures prévues au contrat */
+  const NANNY_ABS=["off","cp","mal","exc","anniv"];
+  function plannedHours(w){const p=plannedFor(w);if(!p)return 0;const a=mins(p[0]),b=mins(p[1]);return(a==null||b==null)?0:((b-a+1440)%1440)/60;}
   function monthStats(y,m){
     const k=keyOf(y,m),days=daysOf(k),n=new Date(y,m+1,0).getDate();
-    const r={work:0,hours:0,other:0,todo:0,by:{},list:[]};
+    const r={work:0,hours:0,other:0,todo:0,by:{},list:[],absH:{},nounouAbsH:0,lessH:0,lessD:0};
     for(let d=1;d<=n;d++){
-      const s=statusIn(y,m,d),e=days[pad(d)]||{};
-      if(s==="work"){r.work++;const h=hoursOf(e);r.hours+=h;r.list.push({d,h,start:e.start,end:e.end});}
-      else if(s&&s!=="repos"){r.other++;r.by[s]=(r.by[s]||0)+1;}
+      const s=statusIn(y,m,d),e=days[pad(d)]||{},ph=plannedHours(wdOf(y,m,d));
+      if(s==="work"){r.work++;const h=hoursOf(e);r.hours+=h;r.list.push({d,h,start:e.start,end:e.end});
+        if(ph&&h&&h<ph-0.01){r.lessH+=ph-h;r.lessD++;}}
+      else if(s&&s!=="repos"){r.other++;r.by[s]=(r.by[s]||0)+1;r.absH[s]=(r.absH[s]||0)+ph;if(NANNY_ABS.includes(s))r.nounouAbsH+=ph;}
       else if(!s&&new Date(y,m,d)<=todayDate)r.todo++;
     }
     r.ent=contrat?r.work*(Number(contrat.entretienJour)||0):0;
@@ -894,7 +927,7 @@ img{max-width:100%}
     $("tdGo").textContent="";$("tdGo").append(ic("pencil"),(e.s||e.note)?"Voir la journée":"Renseigner la journée");
     const r=monthStats(today.y,today.m);
     $("dbMonthLbl").lastChild.textContent=MONTHS[today.m].charAt(0).toUpperCase()+MONTHS[today.m].slice(1)+" "+today.y;
-    $("dbWork").textContent=r.work;$("dbHours").textContent=fmtH(r.hours);$("dbOther").textContent=r.other;
+    $("dbWork").textContent=r.work;$("dbHours").textContent=fmtH(r.hours);$("dbOther").textContent=fmtH(r.nounouAbsH+r.lessH);$("dbOtherSub").textContent="d'absence"+(r.other?" · "+r.other+" j":"");
     $("dbTodo").innerHTML=r.todo?("<b>"+r.todo+"</b> jour"+(r.todo>1?"s":"")+" à confirmer"):"";$("dbTodo").hidden=!r.todo;
   }
   $("tdGo").onclick=()=>{view={y:today.y,m:today.m};sel=today.d;renderAgenda();location.hash="agenda";};
@@ -1282,6 +1315,19 @@ img{max-width:100%}
     const br=$("pBreak");br.textContent="";
     Object.keys(r.by).forEach(k=>{const t=document.createElement("span");t.className="tag";t.style.setProperty("--c",ST[k].c);t.append(ic(ST[k].ic),ST[k].label+" · "+r.by[k]+" j");br.appendChild(t);});
     if(r.todo){const t=document.createElement("span");t.className="tag";t.style.setProperty("--c","var(--line)");t.append(ic("question"),"À confirmer · "+r.todo+" j");br.appendChild(t);}
+    {const L=$("pAbsList");L.textContent="";
+      const row=(icn,c,label,txt,muted)=>{const d=document.createElement("div");d.className="abs-row"+(muted?" muted":"");
+        const t=document.createElement("span");t.className="tag";t.style.setProperty("--c",c);t.append(ic(icn),label);
+        const v=document.createElement("b");v.textContent=txt;d.append(t,v);L.appendChild(d);};
+      NANNY_ABS.forEach(k=>{if(r.by[k])row(ST[k].ic,ST[k].c,ST[k].label,r.by[k]+" j · "+fmtH(r.absH[k]||0));});
+      if(r.lessH)row("clock","var(--rose)","Heures en moins",r.lessD+" j · "+fmtH(r.lessH));
+      ["abs","fer"].forEach(k=>{if(r.by[k])row(ST[k].ic,ST[k].c,ST[k].label+" (non compté)",r.by[k]+" j · "+fmtH(r.absH[k]||0),true);});
+      if(!L.childElementCount){const d=document.createElement("div");d.className="abs-row muted";d.textContent="Aucune absence ce mois-ci.";L.appendChild(d);}
+      $("pAbsTot").textContent=fmtH(r.nounouAbsH+r.lessH);}
+    $("pjJours").textContent=r.work+" j";
+    $("pjHeures").textContent=contrat&&contrat.heuresMensualisees?fmtH(Number(contrat.heuresMensualisees)):"—";
+    $("pjSal").textContent=r.sal!=null?eur(r.sal):"—";
+    $("pjEnt").textContent=eur(r.ent);
     $("pSal").textContent=r.sal!=null?eur(r.sal):"—";
     $("pEnt").textContent=eur(r.ent);
     $("pEntDet").textContent=contrat?("("+r.work+" j × "+eur(Number(contrat.entretienJour)||0)+")"):"";
@@ -1295,20 +1341,22 @@ img{max-width:100%}
     contractMonths().forEach(({y,m})=>{
       const s=monthStats(y,m),k=keyOf(y,m);
       const tr=document.createElement("tr");tr.className="pick";tr.setAttribute("aria-selected",String(k===payKey));tr.tabIndex=0;
-      [[MONTHS[m]+" "+String(y).slice(2),"m"],[s.work],[num(s.hours)],[eur(s.ent)],[s.tot!=null?eur(s.tot):"—"]].forEach(([v,c])=>{const td=document.createElement("td");td.textContent=v;if(c)td.className=c;tr.appendChild(td);});
+      [[MONTHS[m]+" "+String(y).slice(2),"m"],[s.work],[num(s.hours)],[s.nounouAbsH||s.lessH?fmtH(s.nounouAbsH+s.lessH):"—"],[eur(s.ent)],[s.tot!=null?eur(s.tot):"—"]].forEach(([v,c])=>{const td=document.createElement("td");td.textContent=v;if(c)td.className=c;tr.appendChild(td);});
       tr.onclick=()=>{payKey=k;renderPay();window.scrollTo({top:0,behavior:"smooth"});};
       tr.onkeydown=ev=>{if(ev.key==="Enter")tr.onclick();};
       body.appendChild(tr);
-      T.w+=s.work;T.h+=s.hours;T.e+=s.ent;if(s.tot!=null)T.t+=s.tot;
+      T.w+=s.work;T.h+=s.hours;T.a=(T.a||0)+s.nounouAbsH+s.lessH;T.e+=s.ent;if(s.tot!=null)T.t+=s.tot;
     });
     const f=$("yearFoot");f.textContent="";
-    ["Total",T.w,num(T.h),eur(T.e),contrat?eur(T.t):"—"].forEach(v=>{const td=document.createElement("td");td.textContent=v;f.appendChild(td);});
+    ["Total",T.w,num(T.h),fmtH(T.a||0),eur(T.e),contrat?eur(T.t):"—"].forEach(v=>{const td=document.createElement("td");td.textContent=v;f.appendChild(td);});
   }
   $("payCopy").onclick=async()=>{
     const [py,pm]=payKey.split("-").map(Number),r=monthStats(py,pm-1);
     const lines=["Garde de Lola – "+MONTHS[pm-1]+" "+py,
       "Jours travaillés : "+r.work,"Heures réelles : "+fmtH(r.hours)];
-    Object.keys(r.by).forEach(k=>lines.push(ST[k].label+" : "+r.by[k]+" j"));
+    Object.keys(r.by).forEach(k=>lines.push(ST[k].label+" : "+r.by[k]+" j"+(r.absH[k]?" ("+fmtH(r.absH[k])+")":"")));
+    if(r.lessH)lines.push("Heures en moins sur jours travaillés : "+fmtH(r.lessH));
+    lines.push("Total absences de la nounou : "+fmtH(r.nounouAbsH+r.lessH));
     if(r.sal!=null)lines.push("Salaire net mensualisé : "+eur(r.sal));
     lines.push("Indemnités d'entretien : "+eur(r.ent));
     if(r.tot!=null)lines.push("Total indicatif : "+eur(r.tot));
