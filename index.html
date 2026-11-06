@@ -396,7 +396,21 @@ h1 em{position:relative;display:inline-block}
 .pay-hero .lines .tot span:last-child{font-family:var(--display);font-weight:800}
 .stat b{white-space:nowrap;font-size:clamp(20px,6.2vw,26px)}
 .paje{display:flex;flex-direction:column;gap:10px;border-top:1px dashed var(--line);padding-top:14px}
-.paje-kv{display:grid;grid-template-columns:1fr auto;gap:6px 14px;margin:0;font-size:14px;font-variant-numeric:tabular-nums}
+.paje-list{display:flex;flex-direction:column}
+.ret-set{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.ret-set legend{font-size:12px;color:var(--muted);font-weight:600;padding:0;margin-bottom:6px}
+.ret{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;font-size:14px!important;color:var(--ink)!important;font-weight:600}
+.ret input{width:20px;height:20px;accent-color:var(--rose-deep);flex:none}
+.pj-row{border:0;background:transparent;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;padding:10px 2px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.pj-row:first-child{border-top:0}
+.pj-k{display:flex;flex-direction:column;gap:2px;font-size:14px;font-weight:600;min-width:0}
+.pj-k small{font-size:12px;font-weight:500;color:var(--muted)}
+.pj-row b{font-family:var(--display);font-size:18px;font-weight:800;white-space:nowrap;color:var(--rose-deep)}
+.pj-row.ok b{color:#3E9A5A}
+.pj-row b.long{font-size:15px;white-space:normal;text-align:right;max-width:55%}
+#pDedRow span:last-child{white-space:nowrap}
+#pDedDet{display:block;font-size:12px;color:var(--muted)}
+.paje-note{margin:0;font-size:13px;line-height:1.45;background:color-mix(in srgb,var(--s-fer) 18%,var(--surface));border-radius:14px;padding:10px 12px}
 .paje-kv dt{color:var(--muted)}
 .paje-kv dd{margin:0;font-weight:700;text-align:right}
 .paje-cta{text-decoration:none;padding:14px 18px;font-size:16px}
@@ -651,21 +665,19 @@ img{max-width:100%}
       </div>
       <div class="lines">
         <div><span data-ic="euro">Salaire net mensualisé</span><span id="pSal">—</span></div>
+        <div id="pDedRow" hidden><span data-ic="umbrella">Retenue absences <small id="pDedDet"></small></span><span id="pDed">—</span></div>
         <div><span data-ic="basket">Indemnités d'entretien <small id="pEntDet"></small></span><span id="pEnt">—</span></div>
         <div class="tot"><span data-ic="heart">Total indicatif</span><span id="pTot">—</span></div>
         <small>Montant indicatif, à vérifier sur Pajemploi. Retenues éventuelles (absences non rémunérées) à valider selon le motif et la réglementation.</small>
       </div>
       <span class="msg" id="payMsg"></span>
       <div class="paje">
-        <span class="lbl" data-ic="doc">À reporter sur Pajemploi</span>
-        <dl class="paje-kv">
-          <dt>Jours d'activité</dt><dd id="pjJours">—</dd>
-          <dt>Heures normales</dt><dd id="pjHeures">—</dd>
-          <dt>Salaire net</dt><dd id="pjSal">—</dd>
-          <dt>Indemnités d'entretien</dt><dd id="pjEnt">—</dd>
-        </dl>
+        <div class="row"><span class="lbl" data-ic="doc">À reporter sur Pajemploi</span><span class="msg" id="pjWhen"></span></div>
+        <p class="hint">Touchez une valeur pour la copier.</p>
+        <div class="paje-list" id="pjList"></div>
+        <p class="paje-note" id="pjNote" hidden></p>
         <a class="btn paje-cta" href="https://www.pajemploi.urssaf.fr/" target="_blank" rel="noopener">Déclarer la paie sur Pajemploi <span aria-hidden="true">↗</span></a>
-        <small class="hint">S'ouvre sur le site officiel de l'Urssaf. Vérifiez les montants avant de valider la déclaration.</small>
+        <small class="hint">S'ouvre sur le site officiel de l'Urssaf. Montants calculés d'après le contrat et l'agenda : vérifiez-les avant de valider.</small>
       </div>
       <details>
         <summary class="lbl" style="cursor:pointer">Détail des jours travaillés</summary>
@@ -746,6 +758,7 @@ img{max-width:100%}
         <label for="fMens">Heures mensualisées<input type="number" id="fMens" step="0.01" min="0"></label>
         <label for="fEnt">Entretien par jour (€)<input type="number" id="fEnt" step="0.01" min="0"></label>
         <label class="full" for="fCong">Congés<input type="text" id="fCong"></label>
+        <fieldset class="full ret-set"><legend>Absences retenues sur le salaire</legend><div id="fRet"></div></fieldset>
       </div>
       <div class="block">
         <span class="lbl">Horaires prévus (laisser vide si pas de garde)</span>
@@ -846,6 +859,8 @@ img{max-width:100%}
   /* absences de la nounou : comptées en heures prévues au contrat */
   const NANNY_ABS=["off","cp","mal","exc","anniv"];
   function plannedHours(w){const p=plannedFor(w);if(!p)return 0;const a=mins(p[0]),b=mins(p[1]);return(a==null||b==null)?0:((b-a+1440)%1440)/60;}
+  const RET_OPTS=[["mal","Maladie de Marine"],["off","Non travaillé"],["exc","Congé exceptionnel"],["abs","Absence enfant"],["anniv","Anniversaire"],["moins","Heures en moins (arrivée tardive, départ anticipé)"]];
+  function retenues(){return contrat&&Array.isArray(contrat.retenues)?contrat.retenues:["mal","off"];}
   function monthStats(y,m){
     const k=keyOf(y,m),days=daysOf(k),n=new Date(y,m+1,0).getDate();
     const r={work:0,hours:0,other:0,todo:0,by:{},list:[],absH:{},nounouAbsH:0,lessH:0,lessD:0};
@@ -858,7 +873,24 @@ img{max-width:100%}
     }
     r.ent=contrat?r.work*(Number(contrat.entretienJour)||0):0;
     r.sal=contrat&&typeof contrat.salaireNet==="number"?contrat.salaireNet:null;
-    r.tot=r.sal!=null?r.sal+r.ent:null;
+    /* heures prévues au contrat dans le mois, et absences retenues sur le salaire */
+    r.planH=0;for(let d=1;d<=n;d++)r.planH+=plannedHours(wdOf(y,m,d));
+    const ret=retenues();r.dedH=0;r.dedBy={};
+    ret.forEach(k=>{const h=k==="moins"?r.lessH:(r.absH[k]||0);if(h){r.dedH+=h;r.dedBy[k]=h;}});
+    r.ded=(r.sal!=null&&r.planH)?Math.round(r.sal*r.dedH/r.planH*100)/100:0;
+    r.net=r.sal!=null?Math.round((r.sal-r.ded)*100)/100:null;
+    r.tot=r.net!=null?r.net+r.ent:null;
+    /* heures au-delà du contrat, semaine par semaine (comptées dans le mois où finit la semaine) */
+    r.compH=0;r.majH=0;
+    const heb=contrat&&Number(contrat.heuresHebdo)||0;
+    if(heb){for(let d=1;d<=n;d++){if(wdOf(y,m,d)!==0)continue;let wk=0;
+      for(let i=6;i>=0;i--){const dt=new Date(y,m,d-i),kk=keyOf(dt.getFullYear(),dt.getMonth()),e=daysOf(kk)[pad(dt.getDate())]||{};if(e.s==="work")wk+=hoursOf(e);}
+      if(wk>heb+0.01){r.compH+=Math.max(0,Math.min(wk,45)-heb);r.majH+=Math.max(0,wk-Math.max(45,heb));}}}
+    /* champs Pajemploi */
+    const dpw=contrat&&contrat.horaires?Object.keys(contrat.horaires).length:0,sem=contrat&&Number(contrat.semaines)||52;
+    r.pjJours=r.ded>0?r.work:(dpw?Math.ceil(dpw*sem/12):r.work);
+    r.pjHeures=(r.ded>0&&contrat&&contrat.tauxHoraire)?Math.round(r.net/contrat.tauxHoraire):(heb?Math.round(heb*sem/12):null);
+    r.cp52=sem>=52;
     return r;
   }
 
@@ -1306,6 +1338,38 @@ img{max-width:100%}
     if(contrat&&/^\d{4}-\d{2}/.test(contrat.debut||"")){y=+contrat.debut.slice(0,4);m=+contrat.debut.slice(5,7)-1;}
     const out=[];for(let i=0;i<12;i++){out.push({y,m});m++;if(m>11){m=0;y++;}}return out;
   }
+  const m2=v=>v.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2}).replace(/\s/g,"");
+  const lc=t=>t.charAt(0).toLowerCase()+t.slice(1);
+  function renderPaje(y,m,r){
+    const last=new Date(y,m+1,0).getDate(),L=$("pjList");L.textContent="";
+    $("pjWhen").textContent="à déclarer du 25 "+MONTHS[m]+" au 5 "+MONTHS[(m+1)%12];
+    const rows=[
+      ["Période d'emploi","du 1er au "+last+" "+MONTHS[m]+" "+y,null],
+      ["Nombre de jours d'activité",r.pjJours+"",r.ded>0?"jours réellement travaillés (absence retenue ce mois-ci)":"jours prévus au contrat, lissés sur l'année"],
+      ["Nombre d'heures normales",r.pjHeures!=null?r.pjHeures+"":"—",r.ded>0?"salaire net ÷ taux horaire":"heures du contrat, lissées sur l'année"],
+      ["Salaire net",r.net!=null?m2(r.net):"—",r.ded>0?"salaire mensualisé − retenue absences":"salaire mensualisé"],
+      ["Indemnités d'entretien",m2(r.ent),r.work+" jours de présence × "+eur(Number(contrat&&contrat.entretienJour)||0)],
+      ["Congés payés",r.cp52?"laisser vide":((r.by.cp||0)+" j"),r.cp52?"contrat sur 52 semaines":"jours de congés payés ce mois-ci"],
+      ["Heures complémentaires",r.compH?num(r.compH):"0","au-delà de "+num(Number(contrat&&contrat.heuresHebdo)||0)+" h et jusqu'à 45 h dans la semaine"],
+      ["Heures majorées",r.majH?num(r.majH):"0","au-delà de 45 h dans la semaine"],
+      ["Repas, kilomètres, acompte","0","sauf montants versés à part ce mois-ci"]
+    ];
+    rows.forEach(([k,v,hint])=>{
+      const b=document.createElement("button");b.type="button";b.className="pj-row";
+      const t=document.createElement("span");t.className="pj-k";t.textContent=k;
+      if(hint){const h=document.createElement("small");h.textContent=hint;t.appendChild(h);}
+      const val=document.createElement("b");val.textContent=v;if(v.length>12)val.className="long";
+      b.append(t,val);
+      b.onclick=async()=>{const txt=v.replace(/[^\d,]/g,"")||v;try{await navigator.clipboard.writeText(txt);}catch(e){}
+        b.classList.add("ok");val.dataset.v=v;val.textContent="Copié ✓";setTimeout(()=>{b.classList.remove("ok");val.textContent=v;},1200);};
+      L.appendChild(b);
+    });
+    const notes=[];
+    if(r.compH||r.majH)notes.push("Des heures au-delà du contrat ont été faites : ajoutez leur paiement au salaire net, avec la majoration prévue au contrat pour les heures majorées.");
+    if(r.ded>0)notes.push("Retenue appliquée pour : "+Object.keys(r.dedBy).map(k=>(k==="moins"?"heures en moins":lc(ST[k].label))+" ("+fmtH(r.dedBy[k])+")").join(", ")+". Les motifs retenus se règlent dans Documents › Contrat.");
+    if(r.todo)notes.push(r.todo+" jour"+(r.todo>1?"s":"")+" du mois "+(r.todo>1?"sont":"est")+" encore à confirmer dans l'Agenda : les chiffres peuvent changer.");
+    $("pjNote").textContent=notes.join(" ");$("pjNote").hidden=!notes.length;
+  }
   function renderPay(){
     const [py,pm]=payKey.split("-").map(Number),y=py,m=pm-1;
     const r=monthStats(y,m);
@@ -1324,14 +1388,13 @@ img{max-width:100%}
       ["abs","fer"].forEach(k=>{if(r.by[k])row(ST[k].ic,ST[k].c,ST[k].label+" (non compté)",r.by[k]+" j · "+fmtH(r.absH[k]||0),true);});
       if(!L.childElementCount){const d=document.createElement("div");d.className="abs-row muted";d.textContent="Aucune absence ce mois-ci.";L.appendChild(d);}
       $("pAbsTot").textContent=fmtH(r.nounouAbsH+r.lessH);}
-    $("pjJours").textContent=r.work+" j";
-    $("pjHeures").textContent=contrat&&contrat.heuresMensualisees?fmtH(Number(contrat.heuresMensualisees)):"—";
-    $("pjSal").textContent=r.sal!=null?eur(r.sal):"—";
-    $("pjEnt").textContent=eur(r.ent);
+    renderPaje(y,m,r);
     $("pSal").textContent=r.sal!=null?eur(r.sal):"—";
     $("pEnt").textContent=eur(r.ent);
     $("pEntDet").textContent=contrat?("("+r.work+" j × "+eur(Number(contrat.entretienJour)||0)+")"):"";
     $("pTot").textContent=r.tot!=null?eur(r.tot):"—";
+    $("pDedRow").hidden=!r.ded;$("pDed").textContent="− "+eur(r.ded);
+    $("pDedDet").textContent=r.ded?"("+fmtH(r.dedH)+" sur "+fmtH(r.planH)+" prévues)":"";
     const dl=$("pDays");dl.textContent="";
     r.list.forEach(it=>{const row=document.createElement("div");const a=document.createElement("span"),b=document.createElement("span");
       a.textContent=DAYS[wdOf(y,m,it.d)]+" "+it.d;b.textContent=(it.start&&it.end?it.start.replace(":","h")+"–"+it.end.replace(":","h")+" · ":"")+fmtH(it.h);row.append(a,b);dl.appendChild(row);});
@@ -1386,7 +1449,7 @@ img{max-width:100%}
     const S=$("ctSched");S.textContent="";
     SCHED_DAYS.forEach(w=>{const p=plannedFor(w);const dt=document.createElement("dt"),dd=document.createElement("dd");
       dt.textContent=DAYS[w].charAt(0).toUpperCase()+DAYS[w].slice(1);dd.textContent=p?(p[0].replace(":","h")+" – "+p[1].replace(":","h")):"Repos";S.append(dt,dd);});
-    $("ctConges").textContent=has&&contrat.conges?("Congés : "+contrat.conges):"";
+    $("ctConges").textContent=(has&&contrat.conges?("Congés : "+contrat.conges+". "):"")+"Absences retenues sur le salaire : "+(retenues().length?retenues().map(k=>(RET_OPTS.find(o=>o[0]===k)||[k,k])[1].toLowerCase()).join(", "):"aucune")+".";
     $("ctEdit").hidden=!canEdit;
   }
   function fillForm(){
@@ -1394,6 +1457,8 @@ img{max-width:100%}
     $("fAm").value=c.assistante||"";$("fDebut").value=c.debut||"";$("fSem").value=c.semaines??"";
     $("fSal").value=c.salaireNet??"";$("fTaux").value=c.tauxHoraire??"";$("fHeb").value=c.heuresHebdo??"";
     $("fMens").value=c.heuresMensualisees??"";$("fEnt").value=c.entretienJour??"";$("fCong").value=c.conges||"";
+    {const F=$("fRet");F.textContent="";const cur=retenues();
+      RET_OPTS.forEach(([k,l])=>{const lab=document.createElement("label");lab.className="ret";const cb=document.createElement("input");cb.type="checkbox";cb.value=k;cb.id="fRet_"+k;cb.checked=cur.includes(k);lab.append(cb,l);F.appendChild(lab);});}
     const S=$("fSched");S.textContent="";
     SCHED_DAYS.forEach(w=>{const p=plannedFor(w)||["",""];
       const sp=document.createElement("span");sp.textContent=DAYS[w];
@@ -1408,7 +1473,7 @@ img{max-width:100%}
     const n=id=>{const v=$(id).value;return v===""?null:Number(v);};
     const horaires={};SCHED_DAYS.forEach(w=>{const a=$("fs"+w+"a").value,b=$("fs"+w+"b").value;if(a&&b)horaires[String(w)]=[a,b];});
     const data={assistante:$("fAm").value.trim(),debut:$("fDebut").value,semaines:n("fSem"),salaireNet:n("fSal"),tauxHoraire:n("fTaux"),
-      heuresHebdo:n("fHeb"),heuresMensualisees:n("fMens"),entretienJour:n("fEnt"),conges:$("fCong").value.trim(),horaires};
+      heuresHebdo:n("fHeb"),heuresMensualisees:n("fMens"),entretienJour:n("fEnt"),conges:$("fCong").value.trim(),horaires,retenues:[...document.querySelectorAll("#fRet input:checked")].map(i=>i.value)};
     $("ctMsg").textContent="Enregistrement…";
     try{await db.doc("config/contrat").set(data);$("ctMsg").textContent="";$("ctForm").hidden=true;$("ctView").hidden=false;}
     catch(e){$("ctMsg").textContent="Le contrat n'a pas pu être enregistré. Seule Aurélie peut le modifier.";}
